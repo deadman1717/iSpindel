@@ -687,7 +687,8 @@ bool uploadData(uint8_t service)
     if (service == DTHTTP)
     {
       CONSOLELN(F("\ncalling HTTP"));
-      return sender.sendGenericPost(myData.server, myData.uri, myData.port);
+      String response = sender.sendGenericPost(myData.server, myData.uri, myData.port);
+      return processResponse(response);
     }
     else if (service == DTCraftBeerPi)
     {
@@ -708,7 +709,8 @@ bool uploadData(uint8_t service)
     else if (service == DTHTTPS)
     {
       CONSOLELN(F("\ncalling HTTPS"));
-      return sender.sendHTTPSPost(myData.server, myData.uri);
+      String response = sender.sendHTTPSPost(myData.server, myData.uri);
+      return processResponse(response);
     }
   }
 #endif // DATABASESYSTEM
