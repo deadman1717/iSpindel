@@ -379,7 +379,7 @@ bool SenderClass::sendThingSpeak(String token, long Channel)
   return true;
 }
 
-bool SenderClass::sendHTTPSPost(String server, String uri)
+String SenderClass::sendHTTPSPost(String server, String uri)
 {
   String url = server + uri;
   serializeJson(_doc, Serial);
@@ -389,6 +389,8 @@ bool SenderClass::sendHTTPSPost(String server, String uri)
 
   std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
   client->setInsecure();
+
+  String response = "{}";
 
   HTTPClient https;
   if (https.begin(*client, url))
@@ -402,8 +404,8 @@ bool SenderClass::sendHTTPSPost(String server, String uri)
       if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
       {
         CONSOLELN(F("Should be connected..."));
-        String payload = https.getString();
-        CONSOLELN(payload);
+        response = https.getString();
+        CONSOLELN(response);
       }
 
       else
@@ -420,10 +422,10 @@ bool SenderClass::sendHTTPSPost(String server, String uri)
   }
 
   stopclient();
-  return true;
+  return response;
 }
 
-bool SenderClass::sendGenericPost(String server, String uri, uint16_t port)
+String SenderClass::sendGenericPost(String server, String uri, uint16_t port)
 {
   serializeJson(_doc, Serial);
   HTTPClient http;
