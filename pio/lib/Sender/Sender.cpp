@@ -439,13 +439,14 @@ bool SenderClass::sendGenericPost(String server, String uri, uint16_t port)
   serializeJson(_doc, json);
   auto httpCode = http.POST(json);
   CONSOLELN(String(F("code: ")) + httpCode);
-
+  String response = "{}";
   // httpCode will be negative on error
   if (httpCode > 0)
   {
     if (httpCode == HTTP_CODE_OK)
     {
-      CONSOLELN(http.getString());
+      response = http.getString();
+      CONSOLELN(response);
     }
   }
   else
@@ -456,7 +457,7 @@ bool SenderClass::sendGenericPost(String server, String uri, uint16_t port)
 
   http.end();
   stopclient();
-  return true;
+  return response;
 }
 
 bool SenderClass::sendInfluxDB(String server, uint16_t port, String uri, String name, String username, String password,
