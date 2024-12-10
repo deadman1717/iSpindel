@@ -557,14 +557,48 @@ bool processResponse(String response)
   DynamicJsonDocument doc(1024);
 
   DeserializationError error = deserializeJson(doc, response);
-  if (!error && doc.containsKey("interval"))
+  if (!error && doc.containsKey("data"))
   {
-    uint32_t interval = doc["interval"];
-    if (interval != myData.sleeptime && interval < 24 * 60 * 60 && interval > 10)
+    bool new_interval = false, new_server = false, new_uri = false, new_port = false;
+    if (doc["data"].containsKey("interval"))
     {
-      myData.sleeptime = interval;
-      CONSOLE(F("Received new Interval config: "));
-      CONSOLELN(interval);
+      uint32_t interval = doc["data"]["interval"];
+      if (interval != myData.sleeptime && interval < 24 * 60 * 60 && interval > 10)
+      {
+        myData.sleeptime = interval;
+        CONSOLE(F("Received new Interval config: "));
+        CONSOLELN(interval);
+        new_interval = true;
+      }
+    }
+    if(doc["data"].containsKey("server"))
+    {
+      validateInput(doc["data"]["server"], myData.server);
+      CONSOLE(F("Received new Server config: "));
+      CONSOLELN(myData.server);
+      new_server = true;
+    }
+    if(doc["data"].containsKey("uri"))
+    {
+      validateInput(doc["data"]["uri"], myData.uri);
+      CONSOLE(F("Received new URI config: "));
+      CONSOLELN(myData.uri);
+      new_uri = true;
+    }
+    if(doc["data"].containsKey("port"))
+    {
+      uint16_t port = doc["data"]["port"];
+      if(port >= 0 && port <= 65535)
+      {
+        myData.port = port;
+        CONSOLE(F("Received new Port config: "));
+        CONSOLELN(myData.port);
+        new_port = true;
+      }
+    }
+
+    if(new_interval || new_server || new_uri || new_port)
+    {
       return saveConfig();
     }
   }
@@ -687,12 +721,13 @@ bool uploadData(uint8_t service)
     if (service == DTHTTP)
     {
       CONSOLELN(F("\ncalling HTTP"));
-      return sender.sendGenericPost(myData.server, myData.uri, myData.port);
+      String response = sender.sendGenericPost(myData.server, myData.uri, myData.port);
+      return processResponse(response);
     }
     else if (service == DTCraftBeerPi)
     {
       CONSOLELN(F("\ncalling CraftbeerPi"));
-      return sender.sendGenericPost(myData.server, CBP_ENDPOINT, 5000);
+      return sender.sendGenericPost(myData.server, CBP_ENDPOINT, 5000).length() > 0;
     }
     else if (service == DTiSPINDELde)
     {
@@ -708,7 +743,8 @@ bool uploadData(uint8_t service)
     else if (service == DTHTTPS)
     {
       CONSOLELN(F("\ncalling HTTPS"));
-      return sender.sendHTTPSPost(myData.server, myData.uri);
+      String response = sender.sendHTTPSPost(myData.server, myData.uri);
+      return processResponse(response);
     }
   }
 #endif // DATABASESYSTEM

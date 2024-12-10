@@ -379,7 +379,7 @@ bool SenderClass::sendThingSpeak(String token, long Channel)
   return true;
 }
 
-bool SenderClass::sendHTTPSPost(String server, String uri)
+String SenderClass::sendHTTPSPost(String server, String uri)
 {
   String url = server + uri;
   serializeJson(_doc, Serial);
@@ -391,6 +391,9 @@ bool SenderClass::sendHTTPSPost(String server, String uri)
   client->setInsecure();
 
   HTTPClient https;
+
+  String response = "{}";
+
   if (https.begin(*client, url))
   {
     // CONSOLELN(json);
@@ -402,8 +405,8 @@ bool SenderClass::sendHTTPSPost(String server, String uri)
       if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY)
       {
         CONSOLELN(F("Should be connected..."));
-        String payload = https.getString();
-        CONSOLELN(payload);
+        response = https.getString();
+        CONSOLELN(response);
       }
 
       else
@@ -420,10 +423,10 @@ bool SenderClass::sendHTTPSPost(String server, String uri)
   }
 
   stopclient();
-  return true;
+  return response;
 }
 
-bool SenderClass::sendGenericPost(String server, String uri, uint16_t port)
+String SenderClass::sendGenericPost(String server, String uri, uint16_t port)
 {
   serializeJson(_doc, Serial);
   HTTPClient http;
@@ -440,12 +443,15 @@ bool SenderClass::sendGenericPost(String server, String uri, uint16_t port)
   auto httpCode = http.POST(json);
   CONSOLELN(String(F("code: ")) + httpCode);
 
+  String response = "{}";
+
   // httpCode will be negative on error
   if (httpCode > 0)
   {
     if (httpCode == HTTP_CODE_OK)
     {
-      CONSOLELN(http.getString());
+      response = http.getString();
+      CONSOLELN(response);
     }
   }
   else
@@ -456,7 +462,7 @@ bool SenderClass::sendGenericPost(String server, String uri, uint16_t port)
 
   http.end();
   stopclient();
-  return true;
+  return response;
 }
 
 bool SenderClass::sendInfluxDB(String server, uint16_t port, String uri, String name, String username, String password,
