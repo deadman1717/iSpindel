@@ -557,35 +557,42 @@ bool processResponse(String response)
   DynamicJsonDocument doc(1024);
 
   DeserializationError error = deserializeJson(doc, response);
-  if (!error && doc.containsKey("data"))
+  if (!error)
   {
-    bool new_interval = false, new_server = false, new_uri = false, new_port = false;
+    uint32_t interval = 0;
+    bool legacy_response = false, new_interval = false, new_server = false, new_uri = false, new_port = false;
+    if (doc.containsKey("interval"))
+    {
+      interval = doc["interval"];
+      legacy_response = true;
+    }
     if (doc["data"].containsKey("interval"))
     {
-      uint32_t interval = doc["data"]["interval"];
-      if (interval != myData.sleeptime && interval < 24 * 60 * 60 && interval > 10)
-      {
-        myData.sleeptime = interval;
-        CONSOLE(F("Received new Interval config: "));
-        CONSOLELN(interval);
-        new_interval = true;
-      }
+      interval = doc["data"]["interval"];
+      legacy_response = false;
     }
-    if(doc["data"].containsKey("server"))
+    if (interval != myData.sleeptime && interval < 24 * 60 * 60 && interval > 10)
+    {
+      myData.sleeptime = interval;
+      CONSOLE(F("Received new Interval config: "));
+      CONSOLELN(interval);
+      new_interval = true;
+    }
+    if (!legacy_response && doc["data"].containsKey("server"))
     {
       validateInput(doc["data"]["server"], myData.server);
       CONSOLE(F("Received new Server config: "));
       CONSOLELN(myData.server);
       new_server = true;
     }
-    if(doc["data"].containsKey("uri"))
+    if (!legacy_response && doc["data"].containsKey("uri"))
     {
       validateInput(doc["data"]["uri"], myData.uri);
       CONSOLE(F("Received new URI config: "));
       CONSOLELN(myData.uri);
       new_uri = true;
     }
-    if(doc["data"].containsKey("port"))
+    if (!legacy_response && doc["data"].containsKey("port"))
     {
       uint16_t port = doc["data"]["port"];
       if(port >= 0 && port <= 65535)
@@ -597,7 +604,7 @@ bool processResponse(String response)
       }
     }
 
-    if(new_interval || new_server || new_uri || new_port)
+    if (new_interval || new_server || new_uri || new_port)
     {
       return saveConfig();
     }
